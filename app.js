@@ -12,6 +12,29 @@ const transferSeasonOptions = document.querySelector("#transferSeasonOptions");
 const transferSearchButton = document.querySelector("#transferSearchButton");
 const transferStatusText = document.querySelector("#transferStatusText");
 const transferTableBody = document.querySelector("#transferTableBody");
+const CLUB_ALIASES = {
+  spurs: "tottenham hotspur",
+  tottenham: "tottenham hotspur",
+  "tottenham hotspur": "tottenham hotspur",
+  "tottenham hotspur fc": "tottenham hotspur",
+  "man utd": "manchester united",
+  "manchester united": "manchester united",
+  "manchester united fc": "manchester united",
+  "man city": "manchester city",
+  "manchester city": "manchester city",
+  "manchester city fc": "manchester city",
+  "arsenal fc": "arsenal",
+  "chelsea fc": "chelsea",
+  "liverpool fc": "liverpool",
+  "newcastle united": "newcastle",
+  "newcastle united fc": "newcastle",
+  "newcastle utd": "newcastle",
+  wolves: "wolverhampton wanderers",
+  wolverhampton: "wolverhampton wanderers",
+  "west ham": "west ham united",
+  brighton: "brighton & hove albion",
+  "brighton and hove albion": "brighton & hove albion"
+};
 
 tableTitle.textContent = `PL ${CURRENT_SEASON_LABEL}`;
 populateTransferSeasonOptions();
@@ -240,6 +263,8 @@ function filterTransfers(results, query, season) {
     searchText = normalizedQuery.slice(4).trim();
   }
 
+  const normalizedSearchClub = canonicalizeClubName(searchText);
+
   return results
     .filter((item) => {
       if (normalizedSeason && item.season !== normalizedSeason) {
@@ -251,18 +276,24 @@ function filterTransfers(results, query, season) {
       }
 
       const player = (item.playerName || "").toLowerCase();
-      const fromClub = (item.fromClub || "").toLowerCase();
-      const toClub = (item.toClub || "").toLowerCase();
+      const fromClub = canonicalizeClubName(item.fromClub || "");
+      const toClub = canonicalizeClubName(item.toClub || "");
 
       if (direction === "to") {
-        return toClub.includes(searchText);
+        return toClub.includes(searchText) || toClub === normalizedSearchClub;
       }
 
       if (direction === "from") {
-        return fromClub.includes(searchText);
+        return fromClub.includes(searchText) || fromClub === normalizedSearchClub;
       }
 
-      return player.includes(searchText) || fromClub.includes(searchText) || toClub.includes(searchText);
+      return (
+        player.includes(searchText) ||
+        fromClub.includes(searchText) ||
+        toClub.includes(searchText) ||
+        fromClub === normalizedSearchClub ||
+        toClub === normalizedSearchClub
+      );
     })
     .slice(0, 100);
 }
@@ -316,6 +347,18 @@ function normalizeTransferSeason(value) {
   }
 
   return trimmed;
+}
+
+function canonicalizeClubName(value) {
+  const normalized = (value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+u(18|19|21|23)$/g, "")
+    .replace(/\s+fc$/g, "")
+    .replace(/^afc\s+/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return CLUB_ALIASES[normalized] || normalized;
 }
 
 function formatDate(value) {

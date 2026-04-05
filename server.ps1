@@ -14,6 +14,39 @@ $script:PublicFiles = @{
 }
 $script:TransferCache = $null
 $script:TransferCacheFetchedAt = $null
+$script:ClubAliases = @{
+  "spurs" = "Tottenham Hotspur"
+  "tottenham" = "Tottenham Hotspur"
+  "tottenham hotspur" = "Tottenham Hotspur"
+  "tottenham hotspur fc" = "Tottenham Hotspur"
+  "spurs u18" = "Tottenham Hotspur"
+  "spurs u21" = "Tottenham Hotspur"
+  "spurs u23" = "Tottenham Hotspur"
+  "man utd" = "Manchester United"
+  "manchester united" = "Manchester United"
+  "manchester united fc" = "Manchester United"
+  "man city" = "Manchester City"
+  "manchester city" = "Manchester City"
+  "manchester city fc" = "Manchester City"
+  "man city u18" = "Manchester City"
+  "man city u21" = "Manchester City"
+  "man city u23" = "Manchester City"
+  "arsenal fc" = "Arsenal"
+  "chelsea fc" = "Chelsea"
+  "liverpool fc" = "Liverpool"
+  "newcastle united" = "Newcastle"
+  "newcastle united fc" = "Newcastle"
+  "newcastle utd" = "Newcastle"
+  "nottm forest" = "Nottingham Forest"
+  "nott'm forest" = "Nottingham Forest"
+  "wolves" = "Wolverhampton Wanderers"
+  "wolverhampton" = "Wolverhampton Wanderers"
+  "west ham" = "West Ham United"
+  "west ham united" = "West Ham United"
+  "brighton" = "Brighton & Hove Albion"
+  "brighton and hove albion" = "Brighton & Hove Albion"
+  "brighton & hove albion" = "Brighton & Hove Albion"
+}
 
 function Get-EnvFileValues {
   $envPath = Join-Path $script:ProjectRoot ".env.local"
@@ -175,12 +208,47 @@ function Get-TransferRows {
   return $script:TransferCache
 }
 
+function Normalize-ClubName {
+  param([string]$Name)
+
+  if (-not $Name) {
+    return ""
+  }
+
+  $trimmed = $Name.Trim()
+  $normalized = $trimmed.ToLowerInvariant()
+  $normalized = [System.Text.RegularExpressions.Regex]::Replace($normalized, "\s+u(18|19|21|23)$", "")
+  $normalized = [System.Text.RegularExpressions.Regex]::Replace($normalized, "\s+fc$", "")
+  $normalized = [System.Text.RegularExpressions.Regex]::Replace($normalized, "^afc\s+", "")
+  $normalized = ($normalized -replace "\s+", " ").Trim()
+
+  if ($script:ClubAliases.ContainsKey($normalized)) {
+    return $script:ClubAliases[$normalized]
+  }
+
+  return (Get-Culture).TextInfo.ToTitleCase($normalized)
+}
+
+function Get-FeeRank {
+  param([string]$Fee)
+
+  if (-not $Fee -or $Fee -eq "-" -or $Fee -eq "?") {
+    return 0
+  }
+
+  if ($Fee -match "loan|free|retired|end of loan|released") {
+    return 1
+  }
+
+  return 2
+}
+
 function Convert-TransferRow {
   param([Parameter(Mandatory = $true)]$Row)
 
   $movement = [string]$Row.transfer_movement
-  $fromClub = if ($movement -eq "in") { $Row.club_involved_name } else { $Row.club_name }
-  $toClub = if ($movement -eq "in") { $Row.club_name } else { $Row.club_involved_name }
+  $fromClub = if ($movement -eq "in") { Normalize-ClubName $Row.club_involved_name } else { Normalize-ClubName $Row.club_name }
+  $toClub = if ($movement -eq "in") { Normalize-ClubName $Row.club_name } else { Normalize-ClubName $Row.club_involved_name }
 
   return @{
     playerName = $Row.player_name
@@ -195,13 +263,45 @@ function Convert-TransferRow {
   }
 }
 
+function Get-DeduplicatedTransfers {
+  param([Parameter(Mandatory = $true)]$Rows)
+
+  $deduped = @{}
+
+  foreach ($row in $Rows) {
+    $item = Convert-TransferRow -Row $row
+
+    if (-not $item.playerName -or -not $item.fromClub -or -not $item.toClub) {
+      continue
+    }
+
+    if ($item.fromClub -eq $item.toClub) {
+      continue
+    }
+
+    $key = "{0}|{1}|{2}|{3}|{4}" -f $item.playerName.Trim().ToLowerInvariant(), $item.fromClub.ToLowerInvariant(), $item.toClub.ToLowerInvariant(), $item.season, $item.period
+
+    if (-not $deduped.ContainsKey($key)) {
+      $deduped[$key] = $item
+      continue
+    }
+
+    $existing = $deduped[$key]
+    if ((Get-FeeRank $item.fee) -gt (Get-FeeRank $existing.fee)) {
+      $deduped[$key] = $item
+    }
+  }
+
+  return @($deduped.Values)
+}
+
 function Search-Transfers {
   param(
     [string]$Query,
     [string]$Season
   )
 
-  $rows = Get-TransferRows
+  $rows = Get-DeduplicatedTransfers -Rows (Get-TransferRows)
   $normalizedQuery = if ($Query) { $Query.Trim().ToLowerInvariant() } else { "" }
   $direction = "any"
   $searchText = $normalizedQuery
@@ -214,8 +314,10 @@ function Search-Transfers {
     $searchText = $Matches[1].Trim()
   }
 
-  $results = foreach ($row in $rows) {
-    $item = Convert-TransferRow -Row $row
+  $normalizedSearchClub = Normalize-ClubName $searchText
+  $normalizedSearchClubKey = $normalizedSearchClub.ToLowerInvariant()
+
+  $results = foreach ($item in $rows) {
     $matchesSeason = (-not $Season) -or ($item.season -eq $Season)
 
     if (-not $matchesSeason) {
@@ -232,10 +334,14 @@ function Search-Transfers {
     $toClub = ([string]$item.toClub).ToLowerInvariant()
 
     $matched = switch ($direction) {
-      "to" { $toClub -like "*$searchText*" }
-      "from" { $fromClub -like "*$searchText*" }
+      "to" { ($toClub -like "*$searchText*") -or ($toClub -eq $normalizedSearchClubKey) }
+      "from" { ($fromClub -like "*$searchText*") -or ($fromClub -eq $normalizedSearchClubKey) }
       default {
-        ($player -like "*$searchText*") -or ($fromClub -like "*$searchText*") -or ($toClub -like "*$searchText*")
+        ($player -like "*$searchText*") -or
+        ($fromClub -like "*$searchText*") -or
+        ($toClub -like "*$searchText*") -or
+        ($fromClub -eq $normalizedSearchClubKey) -or
+        ($toClub -eq $normalizedSearchClubKey)
       }
     }
 
