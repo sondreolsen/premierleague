@@ -80,6 +80,14 @@ function Convert-TransferRow {
   $fromClub = if ($movement -eq "in") { $dealingClub } else { $club }
   $toClub = if ($movement -eq "in") { $club } else { $dealingClub }
 
+  if ($fromClub -eq "Without Club") {
+    $fromClub = "Klubbløs"
+  }
+
+  if ($toClub -eq "Without Club") {
+    $toClub = "Klubbløs"
+  }
+
   return [PSCustomObject]@{
     playerName = [string]$Row.player_name
     fromClub   = $fromClub

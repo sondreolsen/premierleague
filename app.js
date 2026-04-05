@@ -306,16 +306,16 @@ function renderTransfers(results) {
 
   transferTableBody.innerHTML = sortedResults
     .map(
-      (item) => `
-        <tr>
-          <td>${item.playerName}</td>
-          <td>${item.fromClub || "-"}</td>
-          <td>${item.toClub || "-"}</td>
-          <td>${formatFee(item.fee)}</td>
-          <td>${item.period || "-"}</td>
-          <td>${item.season || item.year || "-"}</td>
-        </tr>
-      `
+        (item) => `
+          <tr>
+            <td>${item.playerName}</td>
+            <td>${formatClubName(item.fromClub)}</td>
+            <td>${formatClubName(item.toClub)}</td>
+            <td>${formatFee(item.fee)}</td>
+            <td>${item.period || "-"}</td>
+            <td>${item.season || item.year || "-"}</td>
+          </tr>
+        `
     )
     .join("");
 }
@@ -335,6 +335,18 @@ function formatFee(value) {
 
   if (String(value).trim().toLowerCase() === "retired") {
     return "Lagt opp";
+  }
+
+  return value;
+}
+
+function formatClubName(value) {
+  if (!value) {
+    return "-";
+  }
+
+  if (String(value).trim().toLowerCase() === "without club") {
+    return "Klubbløs";
   }
 
   return value;
