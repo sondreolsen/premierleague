@@ -60,17 +60,6 @@ body::before {
   padding: 32px;
 }
 
-.hero::after {
-  content: "";
-  position: absolute;
-  width: 220px;
-  height: 220px;
-  right: -40px;
-  top: -60px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(11, 122, 117, 0.22), transparent 70%);
-}
-
 .eyebrow {
   margin: 0 0 10px;
   text-transform: uppercase;
@@ -86,11 +75,17 @@ h1 {
   line-height: 0.95;
 }
 
-.intro {
-  max-width: 60ch;
-  margin: 16px 0 0;
-  font-size: 1.05rem;
-  color: var(--muted);
+.hero-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  min-height: 260px;
+}
+
+.hero-ball {
+  width: clamp(110px, 18vw, 180px);
+  height: auto;
 }
 
 .field {
@@ -285,6 +280,12 @@ tbody tr td:last-child {
   .table-heading {
     align-items: start;
     flex-direction: column;
+  }
+
+  .hero-mark {
+    flex-direction: column;
+    align-items: flex-start;
+    min-height: unset;
   }
 
   .transfer-controls {
