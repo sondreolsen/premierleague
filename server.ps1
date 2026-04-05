@@ -374,10 +374,10 @@ function Get-PeriodSortValue {
 
   $normalized = ([string]$Period).Trim().ToLowerInvariant()
 
-  return switch ($normalized) {
-    "winter" { 2 }
-    "summer" { 1 }
-    default { 0 }
+  switch ($normalized) {
+    "winter" { return 2 }
+    "summer" { return 1 }
+    default { return 0 }
   }
 }
 
@@ -624,7 +624,7 @@ function Handle-TransfersRequest {
       season = $season
       count = @($results).Count
       results = @($results)
-      source = "https://github.com/kayoMichael/premier_league"
+      source = "https://github.com/eordo/transfermarkt-data"
       fetchedAt = (Get-Date).ToString("o")
     }
   } catch {

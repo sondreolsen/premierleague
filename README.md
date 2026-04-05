@@ -2,7 +2,7 @@
 
 Liten nettside som henter den offisielle Premier League-tabellen fra `football-data.org` via en lokal PowerShell-proxy. API-tokenet ligger dermed på serversiden og blir ikke eksponert i frontend.
 
-I tillegg kan siden søke i overgangsdata bygget fra [kayoMichael/premier_league](https://github.com/kayoMichael/premier_league), slik at du kan finne spillere inn og ut av Premier League-klubber med fra-klubb, til-klubb og dato.
+I tillegg kan siden søke i overgangsdata bygget fra [eordo/transfermarkt-data](https://github.com/eordo/transfermarkt-data), slik at du kan finne spillere inn og ut av Premier League-klubber med fra-klubb, til-klubb og dato.
 
 Prosjektet er også klargjort for GitHub Pages. Da bygges statiske JSON-filer via GitHub Actions, og selve nettsiden publiseres uten at tokenet eksponeres.
 
@@ -41,6 +41,6 @@ Etter publisering vil siden lese fra statiske filer i `data/` når lokal proxy i
 - Frontend kan også hente `/api/transfers` for overgangssøk
 - Serveren sender `X-Auth-Token` til `football-data.org`
 - Tabellen kommer fra det offisielle endepunktet `v4/competitions/PL/standings`
-- Overgangsdata bygges fra `kayoMichael/premier_league`
+- Overgangsdata bygges fra `eordo/transfermarkt-data`
 - Rate-limit-headere leses og vises i grensesnittet
 - GitHub Actions kan bygge statiske `data/standings.json` og `data/transfers.json` for GitHub Pages
