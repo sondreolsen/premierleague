@@ -1,5 +1,5 @@
 ﻿{
-    "generatedAt":  "2026-04-05T20:04:55.1036483+02:00",
+    "generatedAt":  "2026-04-05T20:18:59.1531068+02:00",
     "source":  "https://api.football-data.org/v4/competitions/PL/standings",
     "seasons":  {
                     "2023":  {
@@ -246,11 +246,11 @@
                                                    "playedGames":  38
                                                }
                                            ],
-                                 "lastUpdated":  "Sun, 05 Apr 2026 18:04:55 GMT",
+                                 "lastUpdated":  "Sun, 05 Apr 2026 18:18:59 GMT",
                                  "competition":  "Premier League",
                                  "throttle":  {
-                                                  "requestsAvailable":  "7",
-                                                  "requestCounterReset":  "1"
+                                                  "requestsAvailable":  "9",
+                                                  "requestCounterReset":  "60"
                                               }
                              },
                     "2025":  {
@@ -497,11 +497,11 @@
                                                    "playedGames":  31
                                                }
                                            ],
-                                 "lastUpdated":  "Sun, 05 Apr 2026 18:04:55 GMT",
+                                 "lastUpdated":  "Sun, 05 Apr 2026 18:18:59 GMT",
                                  "competition":  "Premier League",
                                  "throttle":  {
-                                                  "requestsAvailable":  "5",
-                                                  "requestCounterReset":  "1"
+                                                  "requestsAvailable":  "8",
+                                                  "requestCounterReset":  "60"
                                               }
                              },
                     "2024":  {
@@ -748,11 +748,11 @@
                                                    "playedGames":  38
                                                }
                                            ],
-                                 "lastUpdated":  "Sun, 05 Apr 2026 18:04:55 GMT",
+                                 "lastUpdated":  "Sun, 05 Apr 2026 18:18:59 GMT",
                                  "competition":  "Premier League",
                                  "throttle":  {
-                                                  "requestsAvailable":  "6",
-                                                  "requestCounterReset":  "1"
+                                                  "requestsAvailable":  "9",
+                                                  "requestCounterReset":  "60"
                                               }
                              }
                 }
