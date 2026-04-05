@@ -27,7 +27,7 @@
       <section class="control-panel">
         <label class="field field-small">
           <span>Sesong</span>
-          <input id="seasonInput" type="number" min="2020" step="1" />
+          <select id="seasonInput"></select>
         </label>
 
         <button id="loadButton" type="button">Oppdater tabell</button>
@@ -57,7 +57,13 @@
 
           <label class="field field-small">
             <span>Sesongfilter</span>
-            <input id="transferSeasonInput" type="text" placeholder="f.eks. 2025/2026" />
+            <input
+              id="transferSeasonInput"
+              type="text"
+              list="transferSeasonOptions"
+              placeholder="f.eks. 25/26 eller 24/25"
+            />
+            <datalist id="transferSeasonOptions"></datalist>
           </label>
 
           <button id="transferSearchButton" type="button">Finn overganger</button>

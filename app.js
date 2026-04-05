@@ -7,11 +7,12 @@ const metaText = document.querySelector("#metaText");
 const tableBody = document.querySelector("#tableBody");
 const transferQueryInput = document.querySelector("#transferQueryInput");
 const transferSeasonInput = document.querySelector("#transferSeasonInput");
+const transferSeasonOptions = document.querySelector("#transferSeasonOptions");
 const transferSearchButton = document.querySelector("#transferSearchButton");
 const transferStatusText = document.querySelector("#transferStatusText");
 const transferTableBody = document.querySelector("#transferTableBody");
 
-seasonInput.value = String(DEFAULT_SEASON);
+populateSeasonOptions();
 transferSeasonInput.value = "";
 
 loadButton.addEventListener("click", () => {
@@ -109,7 +110,7 @@ async function fetchStandings(season) {
 
 async function loadTransfers() {
   const query = transferQueryInput.value.trim();
-  const season = transferSeasonInput.value.trim();
+  const season = normalizeTransferSeason(transferSeasonInput.value.trim());
 
   transferStatusText.textContent = "Henter overgangsdata ...";
   renderTransferEmpty("Laster overganger ...");
@@ -239,7 +240,7 @@ function formatFee(value) {
 
 function filterTransfers(results, query, season) {
   const normalizedQuery = (query || "").trim().toLowerCase();
-  const normalizedSeason = (season || "").trim();
+  const normalizedSeason = normalizeTransferSeason((season || "").trim());
   let direction = "any";
   let searchText = normalizedQuery;
 
@@ -284,6 +285,55 @@ function getDefaultSeason() {
   const month = now.getMonth();
 
   return month >= 6 ? year : year - 1;
+}
+
+function populateSeasonOptions() {
+  const seasonYears = [];
+
+  for (let year = DEFAULT_SEASON; year >= 2020; year -= 1) {
+    seasonYears.push(year);
+  }
+
+  seasonInput.innerHTML = seasonYears
+    .map((year) => `<option value="${year}">${formatSeasonLabel(year)}</option>`)
+    .join("");
+
+  seasonInput.value = String(DEFAULT_SEASON);
+
+  transferSeasonOptions.innerHTML = seasonYears
+    .map((year) => {
+      const label = formatSeasonLabel(year);
+      const full = `${year}/${year + 1}`;
+      return `<option value="${label}"></option><option value="${full}"></option>`;
+    })
+    .join("");
+}
+
+function formatSeasonLabel(startYear) {
+  const start = String(startYear).slice(-2);
+  const end = String(startYear + 1).slice(-2);
+  return `${start}/${end}`;
+}
+
+function normalizeTransferSeason(value) {
+  if (!value) {
+    return "";
+  }
+
+  const trimmed = value.trim();
+  const shortMatch = trimmed.match(/^(\d{2})\s*\/\s*(\d{2})$/);
+  if (shortMatch) {
+    const startYear = Number.parseInt(shortMatch[1], 10);
+    const fullStartYear = startYear >= 90 ? 1900 + startYear : 2000 + startYear;
+    return `${fullStartYear}/${fullStartYear + 1}`;
+  }
+
+  const fullMatch = trimmed.match(/^(\d{4})\s*\/\s*(\d{4})$/);
+  if (fullMatch) {
+    return `${fullMatch[1]}/${fullMatch[2]}`;
+  }
+
+  return trimmed;
 }
 
 function formatDate(value) {

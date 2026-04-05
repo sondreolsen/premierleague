@@ -114,11 +114,13 @@ h1 {
 }
 
 input,
+select,
 button {
   font: inherit;
 }
 
-input {
+input,
+select {
   min-height: 52px;
   padding: 0 16px;
   border-radius: 16px;
@@ -127,7 +129,8 @@ input {
   color: var(--ink);
 }
 
-input:focus {
+input:focus,
+select:focus {
   outline: 2px solid rgba(11, 122, 117, 0.2);
   border-color: rgba(11, 122, 117, 0.45);
 }
