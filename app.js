@@ -9,6 +9,7 @@ const transferSeasonInput = document.querySelector("#transferSeasonInput");
 const transferSeasonOptions = document.querySelector("#transferSeasonOptions");
 const transferSearchButton = document.querySelector("#transferSearchButton");
 const transferTableBody = document.querySelector("#transferTableBody");
+const transferSortButtons = [...document.querySelectorAll(".sort-button")];
 const CLUB_ALIASES = {
   spurs: "tottenham hotspur",
   tottenham: "tottenham hotspur",
@@ -113,10 +114,16 @@ const CLUB_ALIASES = {
   "brighton and hove albion": "brighton & hove albion",
   "brighton & hove albion": "brighton & hove albion"
 };
+let currentTransferResults = [];
+let transferSort = {
+  key: "season",
+  direction: "desc"
+};
 
 tableTitle.textContent = `PL ${CURRENT_SEASON_LABEL}`;
 populateTransferSeasonOptions();
 transferSeasonInput.value = "";
+updateTransferSortButtons();
 
 transferSearchButton.addEventListener("click", () => {
   loadTransfers();
@@ -127,6 +134,22 @@ transferQueryInput.addEventListener("keydown", (event) => {
     loadTransfers();
   }
 });
+
+for (const button of transferSortButtons) {
+  button.addEventListener("click", () => {
+    const { sortKey } = button.dataset;
+
+    if (transferSort.key === sortKey) {
+      transferSort.direction = transferSort.direction === "asc" ? "desc" : "asc";
+    } else {
+      transferSort.key = sortKey;
+      transferSort.direction = sortKey === "season" ? "desc" : "asc";
+    }
+
+    updateTransferSortButtons();
+    renderTransfers(currentTransferResults);
+  });
+}
 
 loadTable();
 
@@ -195,12 +218,15 @@ async function loadTransfers() {
     const payload = await fetchTransfers(query, season);
 
     if (!payload.results.length) {
+      currentTransferResults = [];
       renderTransferEmpty("Fant ingen overganger som matcher soket.");
       return;
     }
 
-    renderTransfers(payload.results);
+    currentTransferResults = payload.results;
+    renderTransfers(currentTransferResults);
   } catch (error) {
+    currentTransferResults = [];
     renderTransferEmpty("Kunne ikke laste overgangene.");
   } finally {
     transferSearchButton.disabled = false;
@@ -272,7 +298,14 @@ function renderEmpty(message) {
 }
 
 function renderTransfers(results) {
-  transferTableBody.innerHTML = results
+  if (!results.length) {
+    renderTransferEmpty("Fant ingen overganger som matcher soket.");
+    return;
+  }
+
+  const sortedResults = sortTransferResults(results);
+
+  transferTableBody.innerHTML = sortedResults
     .map(
       (item) => `
         <tr>
@@ -353,24 +386,6 @@ function filterTransfers(results, query, season) {
         fromClub === normalizedSearchClub ||
         toClub === normalizedSearchClub
       );
-    })
-    .sort((a, b) => {
-      const seasonDiff = getSeasonSortValue(b.season) - getSeasonSortValue(a.season);
-      if (seasonDiff !== 0) {
-        return seasonDiff;
-      }
-
-      const periodDiff = getPeriodSortValue(b.period) - getPeriodSortValue(a.period);
-      if (periodDiff !== 0) {
-        return periodDiff;
-      }
-
-      const yearDiff = Number.parseInt(b.year || "0", 10) - Number.parseInt(a.year || "0", 10);
-      if (yearDiff !== 0) {
-        return yearDiff;
-      }
-
-      return (a.playerName || "").localeCompare(b.playerName || "", "no");
     })
     .slice(0, 100);
 }
@@ -455,4 +470,58 @@ function getPeriodSortValue(period) {
   }
 
   return 0;
+}
+
+function sortTransferResults(results) {
+  const directionMultiplier = transferSort.direction === "asc" ? 1 : -1;
+
+  return [...results].sort((a, b) => {
+    const primary = compareTransferField(a, b, transferSort.key);
+    if (primary !== 0) {
+      return primary * directionMultiplier;
+    }
+
+    const fallbackSeason = getSeasonSortValue(b.season) - getSeasonSortValue(a.season);
+    if (fallbackSeason !== 0) {
+      return fallbackSeason;
+    }
+
+    const fallbackPeriod = getPeriodSortValue(b.period) - getPeriodSortValue(a.period);
+    if (fallbackPeriod !== 0) {
+      return fallbackPeriod;
+    }
+
+    const fallbackYear = Number.parseInt(b.year || "0", 10) - Number.parseInt(a.year || "0", 10);
+    if (fallbackYear !== 0) {
+      return fallbackYear;
+    }
+
+    return (a.playerName || "").localeCompare(b.playerName || "", "no");
+  });
+}
+
+function compareTransferField(a, b, key) {
+  if (key === "season") {
+    const seasonDiff = getSeasonSortValue(a.season) - getSeasonSortValue(b.season);
+    if (seasonDiff !== 0) {
+      return seasonDiff;
+    }
+
+    return getPeriodSortValue(a.period) - getPeriodSortValue(b.period);
+  }
+
+  if (key === "period") {
+    return getPeriodSortValue(a.period) - getPeriodSortValue(b.period);
+  }
+
+  return String(a[key] || "").localeCompare(String(b[key] || ""), "no");
+}
+
+function updateTransferSortButtons() {
+  for (const button of transferSortButtons) {
+    const isActive = button.dataset.sortKey === transferSort.key;
+    const arrow = isActive ? (transferSort.direction === "asc" ? " ↑" : " ↓") : "";
+    button.textContent = `${button.textContent.replace(/ [↑↓]$/, "")}${arrow}`;
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+  }
 }

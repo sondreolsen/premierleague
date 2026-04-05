@@ -141,6 +141,27 @@ button:hover {
   box-shadow: 0 16px 30px rgba(8, 79, 76, 0.25);
 }
 
+.sort-button {
+  width: 100%;
+  min-height: unset;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.sort-button:hover {
+  transform: none;
+  box-shadow: none;
+  color: var(--accent-strong);
+}
+
 .transfer-card,
 .table-card {
   margin-top: 22px;
