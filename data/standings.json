@@ -1,5 +1,5 @@
 ﻿{
-    "generatedAt":  "2026-04-05T20:18:59.1531068+02:00",
+    "generatedAt":  "2026-04-05T20:24:01.5613477+02:00",
     "source":  "https://api.football-data.org/v4/competitions/PL/standings",
     "seasons":  {
                     "2023":  {
@@ -246,7 +246,7 @@
                                                    "playedGames":  38
                                                }
                                            ],
-                                 "lastUpdated":  "Sun, 05 Apr 2026 18:18:59 GMT",
+                                 "lastUpdated":  "Sun, 05 Apr 2026 18:24:01 GMT",
                                  "competition":  "Premier League",
                                  "throttle":  {
                                                   "requestsAvailable":  "9",
@@ -497,7 +497,7 @@
                                                    "playedGames":  31
                                                }
                                            ],
-                                 "lastUpdated":  "Sun, 05 Apr 2026 18:18:59 GMT",
+                                 "lastUpdated":  "Sun, 05 Apr 2026 18:24:02 GMT",
                                  "competition":  "Premier League",
                                  "throttle":  {
                                                   "requestsAvailable":  "8",
@@ -748,7 +748,7 @@
                                                    "playedGames":  38
                                                }
                                            ],
-                                 "lastUpdated":  "Sun, 05 Apr 2026 18:18:59 GMT",
+                                 "lastUpdated":  "Sun, 05 Apr 2026 18:24:02 GMT",
                                  "competition":  "Premier League",
                                  "throttle":  {
                                                   "requestsAvailable":  "9",
