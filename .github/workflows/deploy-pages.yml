@@ -1,0 +1,61 @@
+name: Build and Deploy GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */6 * * *"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      FOOTBALL_DATA_API_TOKEN: ${{ secrets.FOOTBALL_DATA_API_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Generate static data
+        shell: pwsh
+        run: ./scripts/build-static-data.ps1 -OutputDir site/data
+
+      - name: Copy site files
+        shell: pwsh
+        run: |
+          Copy-Item index.html site/index.html
+          Copy-Item app.js site/app.js
+          Copy-Item styles.css site/styles.css
+
+      - name: Disable Jekyll
+        shell: pwsh
+        run: New-Item -ItemType File -Path site/.nojekyll -Force | Out-Null
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

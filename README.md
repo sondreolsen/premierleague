@@ -4,6 +4,8 @@ Liten nettside som henter den offisielle Premier League-tabellen fra `football-d
 
 I tillegg kan siden søke i overgangsdata fra [ewenme/transfers](https://github.com/ewenme/transfers), slik at du kan finne spillere inn og ut av Premier League-klubber med fra-klubb, til-klubb og sum når den er oppgitt.
 
+Prosjektet er også klargjort for GitHub Pages. Da bygges statiske JSON-filer via GitHub Actions, og selve nettsiden publiseres uten at tokenet eksponeres.
+
 ## Oppsett
 
 1. Lag en fil som heter `.env.local` i prosjektmappen.
@@ -21,6 +23,15 @@ powershell -ExecutionPolicy Bypass -File .\server.ps1
 
 4. Åpne [http://localhost:3000](http://localhost:3000)
 
+## GitHub Pages
+
+1. Gå til repoet på GitHub og legg inn en repository secret med navn `FOOTBALL_DATA_API_TOKEN`.
+2. Gå til `Settings -> Pages`.
+3. Sett `Source` til `GitHub Actions`.
+4. Workflowen `.github/workflows/deploy-pages.yml` vil da bygge og publisere siden automatisk ved push til `main`, manuelt, og hver 6. time.
+
+Etter publisering vil siden lese fra statiske filer i `data/` når lokal proxy ikke er tilgjengelig.
+
 ## Hva løsningen gjør
 
 - Frontend henter `/api/standings` fra lokal server
@@ -29,3 +40,4 @@ powershell -ExecutionPolicy Bypass -File .\server.ps1
 - Tabellen kommer fra det offisielle endepunktet `v4/competitions/PL/standings`
 - Overgangsdata kommer fra `data/premier-league.csv` i `ewenme/transfers`
 - Rate-limit-headere leses og vises i grensesnittet
+- GitHub Actions kan bygge statiske `data/standings.json` og `data/transfers.json` for GitHub Pages

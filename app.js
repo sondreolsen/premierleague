@@ -12,6 +12,7 @@ const transferStatusText = document.querySelector("#transferStatusText");
 const transferTableBody = document.querySelector("#transferTableBody");
 
 seasonInput.value = String(DEFAULT_SEASON);
+transferSeasonInput.value = "";
 
 loadButton.addEventListener("click", () => {
   loadTable();
@@ -56,10 +57,11 @@ async function loadTable() {
     const updatedText = payload.lastUpdated
       ? `Sist oppdatert: ${formatDate(payload.lastUpdated)}`
       : "";
+    const sourceText = payload.mode === "live" ? "Kilde: lokal live-proxy." : "Kilde: publisert GitHub Pages-snapshot.";
 
     setStatus(
       `Tabellen er hentet fra offisielt standings-endepunkt.`,
-      formatMeta(updatedText, payload.throttle)
+      formatMeta([updatedText, sourceText].filter(Boolean).join(" "), payload.throttle)
     );
   } catch (error) {
     renderEmpty("Kunne ikke laste tabellen.");
@@ -70,17 +72,39 @@ async function loadTable() {
 }
 
 async function fetchStandings(season) {
-  const url = new URL("/api/standings", window.location.origin);
-  url.searchParams.set("season", String(season));
+  const liveUrl = new URL("./api/standings", window.location.href);
+  liveUrl.searchParams.set("season", String(season));
 
-  const response = await fetch(url);
-  const payload = await response.json().catch(() => ({}));
+  try {
+    const response = await fetch(liveUrl);
+    const payload = await response.json().catch(() => ({}));
 
-  if (!response.ok) {
-    throw new Error(payload.error || `Lokal server svarte med status ${response.status}.`);
+    if (!response.ok) {
+      throw new Error(payload.error || `Lokal server svarte med status ${response.status}.`);
+    }
+
+    payload.mode = "live";
+    return payload;
+  } catch {
+    const snapshotUrl = new URL("./data/standings.json", window.location.href);
+    const response = await fetch(snapshotUrl);
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error("Fant verken lokal server eller publisert standings-fil.");
+    }
+
+    const seasonEntry = payload.seasons?.[String(season)];
+    if (!seasonEntry) {
+      throw new Error(`Fant ingen publisert tabell for sesongen ${season}.`);
+    }
+
+    return {
+      ...seasonEntry,
+      mode: "snapshot",
+      generatedAt: payload.generatedAt
+    };
   }
-
-  return payload;
 }
 
 async function loadTransfers() {
@@ -101,7 +125,8 @@ async function loadTransfers() {
     }
 
     renderTransfers(payload.results);
-    transferStatusText.textContent = `${payload.count} overganger vist fra datasettet i ewenme/transfers.`;
+    const sourceText = payload.mode === "live" ? "live backend" : "publisert GitHub Pages-data";
+    transferStatusText.textContent = `${payload.count} overganger vist fra ${sourceText}.`;
   } catch (error) {
     renderTransferEmpty("Kunne ikke laste overgangene.");
     transferStatusText.textContent = error.message || "Noe gikk galt ved henting av overgangsdata.";
@@ -111,24 +136,42 @@ async function loadTransfers() {
 }
 
 async function fetchTransfers(query, season) {
-  const url = new URL("/api/transfers", window.location.origin);
+  const liveUrl = new URL("./api/transfers", window.location.href);
 
   if (query) {
-    url.searchParams.set("q", query);
+    liveUrl.searchParams.set("q", query);
   }
 
   if (season) {
-    url.searchParams.set("season", season);
+    liveUrl.searchParams.set("season", season);
   }
 
-  const response = await fetch(url);
-  const payload = await response.json().catch(() => ({}));
+  try {
+    const response = await fetch(liveUrl);
+    const payload = await response.json().catch(() => ({}));
 
-  if (!response.ok) {
-    throw new Error(payload.error || `Lokal server svarte med status ${response.status}.`);
+    if (!response.ok) {
+      throw new Error(payload.error || `Lokal server svarte med status ${response.status}.`);
+    }
+
+    payload.mode = "live";
+    return payload;
+  } catch {
+    const snapshotUrl = new URL("./data/transfers.json", window.location.href);
+    const response = await fetch(snapshotUrl);
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error("Fant verken lokal server eller publisert transfer-fil.");
+    }
+
+    const results = filterTransfers(payload.results || [], query, season);
+    return {
+      mode: "snapshot",
+      count: results.length,
+      results
+    };
   }
-
-  return payload;
 }
 
 function renderTable(table) {
@@ -192,6 +235,47 @@ function formatFee(value) {
   }
 
   return value;
+}
+
+function filterTransfers(results, query, season) {
+  const normalizedQuery = (query || "").trim().toLowerCase();
+  const normalizedSeason = (season || "").trim();
+  let direction = "any";
+  let searchText = normalizedQuery;
+
+  if (normalizedQuery.startsWith("til ")) {
+    direction = "to";
+    searchText = normalizedQuery.slice(4).trim();
+  } else if (normalizedQuery.startsWith("fra ")) {
+    direction = "from";
+    searchText = normalizedQuery.slice(4).trim();
+  }
+
+  return results
+    .filter((item) => {
+      if (normalizedSeason && item.season !== normalizedSeason) {
+        return false;
+      }
+
+      if (!searchText) {
+        return true;
+      }
+
+      const player = (item.playerName || "").toLowerCase();
+      const fromClub = (item.fromClub || "").toLowerCase();
+      const toClub = (item.toClub || "").toLowerCase();
+
+      if (direction === "to") {
+        return toClub.includes(searchText);
+      }
+
+      if (direction === "from") {
+        return fromClub.includes(searchText);
+      }
+
+      return player.includes(searchText) || fromClub.includes(searchText) || toClub.includes(searchText);
+    })
+    .slice(0, 100);
 }
 
 function getDefaultSeason() {
