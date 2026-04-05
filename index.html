@@ -35,13 +35,15 @@
 
         <div class="transfer-controls">
           <label class="field">
-            <input
-              id="transferQueryInput"
-              type="text"
-              list="transferSuggestions"
-              placeholder="Arsenal, til Liverpool, fra Chelsea, Cole Palmer ..."
-            />
-            <datalist id="transferSuggestions"></datalist>
+            <div class="search-input-wrap">
+              <input
+                id="transferQueryInput"
+                type="text"
+                autocomplete="off"
+                placeholder="Arsenal, til Liverpool, fra Chelsea, Cole Palmer ..."
+              />
+              <div id="transferSuggestions" class="search-suggestions" hidden></div>
+            </div>
           </label>
 
           <label class="field field-small">

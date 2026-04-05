@@ -116,6 +116,8 @@ const CLUB_ALIASES = {
 };
 let currentTransferResults = [];
 let transferDataset = [];
+let currentSuggestions = [];
+let activeSuggestionIndex = -1;
 let transferSort = {
   key: "season",
   direction: "desc"
@@ -130,6 +132,30 @@ transferSearchButton.addEventListener("click", () => {
 });
 
 transferQueryInput.addEventListener("keydown", (event) => {
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+    moveSuggestionSelection(1);
+    return;
+  }
+
+  if (event.key === "ArrowUp") {
+    event.preventDefault();
+    moveSuggestionSelection(-1);
+    return;
+  }
+
+  if (event.key === "Enter" && activeSuggestionIndex >= 0) {
+    event.preventDefault();
+    applySuggestion(currentSuggestions[activeSuggestionIndex]);
+    loadTransfers();
+    return;
+  }
+
+  if (event.key === "Escape") {
+    hideTransferSuggestions();
+    return;
+  }
+
   if (event.key === "Enter") {
     loadTransfers();
   }
@@ -137,6 +163,16 @@ transferQueryInput.addEventListener("keydown", (event) => {
 
 transferQueryInput.addEventListener("input", () => {
   updateTransferSuggestions();
+});
+
+transferQueryInput.addEventListener("focus", () => {
+  updateTransferSuggestions();
+});
+
+transferQueryInput.addEventListener("blur", () => {
+  window.setTimeout(() => {
+    hideTransferSuggestions();
+  }, 150);
 });
 
 transferSeasonInput.addEventListener("change", () => {
@@ -432,13 +468,73 @@ function updateTransferSuggestions() {
       suggestions.push(trimmedCandidate);
 
       if (suggestions.length >= 12) {
-        transferSuggestions.innerHTML = suggestions.map((itemValue) => `<option value="${escapeHtml(itemValue)}"></option>`).join("");
+        renderTransferSuggestions(suggestions);
         return;
       }
     }
   }
 
-  transferSuggestions.innerHTML = suggestions.map((itemValue) => `<option value="${escapeHtml(itemValue)}"></option>`).join("");
+  renderTransferSuggestions(suggestions);
+}
+
+function renderTransferSuggestions(suggestions) {
+  currentSuggestions = suggestions;
+  activeSuggestionIndex = -1;
+
+  if (!suggestions.length || !transferQueryInput.value.trim()) {
+    hideTransferSuggestions();
+    return;
+  }
+
+  transferSuggestions.hidden = false;
+  transferSuggestions.innerHTML = suggestions
+    .map(
+      (itemValue, index) =>
+        `<button type="button" class="suggestion-item" data-suggestion-index="${index}">${escapeHtml(itemValue)}</button>`
+    )
+    .join("");
+
+  for (const button of transferSuggestions.querySelectorAll(".suggestion-item")) {
+    button.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      const index = Number(button.dataset.suggestionIndex);
+      applySuggestion(currentSuggestions[index]);
+      loadTransfers();
+    });
+  }
+}
+
+function hideTransferSuggestions() {
+  currentSuggestions = [];
+  activeSuggestionIndex = -1;
+  transferSuggestions.hidden = true;
+  transferSuggestions.innerHTML = "";
+}
+
+function moveSuggestionSelection(step) {
+  if (!currentSuggestions.length) {
+    updateTransferSuggestions();
+  }
+
+  if (!currentSuggestions.length) {
+    return;
+  }
+
+  activeSuggestionIndex = (activeSuggestionIndex + step + currentSuggestions.length) % currentSuggestions.length;
+  syncSuggestionSelection();
+}
+
+function syncSuggestionSelection() {
+  const buttons = [...transferSuggestions.querySelectorAll(".suggestion-item")];
+
+  buttons.forEach((button, index) => {
+    button.classList.toggle("is-active", index === activeSuggestionIndex);
+  });
+}
+
+function applySuggestion(value) {
+  transferQueryInput.value = value || "";
+  hideTransferSuggestions();
 }
 
 function filterTransfers(results, query, season) {
