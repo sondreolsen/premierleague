@@ -249,6 +249,32 @@ function Get-FeeRank {
   return 2
 }
 
+function Get-SeasonSortValue {
+  param([string]$Season)
+
+  if (-not $Season) {
+    return 0
+  }
+
+  if ($Season -match "^(\d{4})/(\d{4})$") {
+    return [int]$Matches[1]
+  }
+
+  return 0
+}
+
+function Get-PeriodSortValue {
+  param([string]$Period)
+
+  $normalized = ([string]$Period).Trim().ToLowerInvariant()
+
+  return switch ($normalized) {
+    "winter" { 2 }
+    "summer" { 1 }
+    default { 0 }
+  }
+}
+
 function Convert-TransferRow {
   param([Parameter(Mandatory = $true)]$Row)
 
@@ -357,7 +383,11 @@ function Search-Transfers {
   }
 
   $ordered = $results |
-    Sort-Object @{ Expression = { [int]$_.year }; Descending = $true }, @{ Expression = { $_.playerName } }
+    Sort-Object `
+      @{ Expression = { Get-SeasonSortValue $_.season }; Descending = $true }, `
+      @{ Expression = { Get-PeriodSortValue $_.period }; Descending = $true }, `
+      @{ Expression = { [int]$_.year }; Descending = $true }, `
+      @{ Expression = { $_.playerName } }
 
   return @($ordered | Select-Object -First 100)
 }

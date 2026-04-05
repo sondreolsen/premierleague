@@ -295,6 +295,24 @@ function filterTransfers(results, query, season) {
         toClub === normalizedSearchClub
       );
     })
+    .sort((a, b) => {
+      const seasonDiff = getSeasonSortValue(b.season) - getSeasonSortValue(a.season);
+      if (seasonDiff !== 0) {
+        return seasonDiff;
+      }
+
+      const periodDiff = getPeriodSortValue(b.period) - getPeriodSortValue(a.period);
+      if (periodDiff !== 0) {
+        return periodDiff;
+      }
+
+      const yearDiff = Number.parseInt(b.year || "0", 10) - Number.parseInt(a.year || "0", 10);
+      if (yearDiff !== 0) {
+        return yearDiff;
+      }
+
+      return (a.playerName || "").localeCompare(b.playerName || "", "no");
+    })
     .slice(0, 100);
 }
 
@@ -359,6 +377,25 @@ function canonicalizeClubName(value) {
     .replace(/\s+/g, " ")
     .trim();
   return CLUB_ALIASES[normalized] || normalized;
+}
+
+function getSeasonSortValue(season) {
+  const match = (season || "").match(/^(\d{4})\/(\d{4})$/);
+  return match ? Number.parseInt(match[1], 10) : 0;
+}
+
+function getPeriodSortValue(period) {
+  const normalized = (period || "").trim().toLowerCase();
+
+  if (normalized === "winter") {
+    return 2;
+  }
+
+  if (normalized === "summer") {
+    return 1;
+  }
+
+  return 0;
 }
 
 function formatDate(value) {
