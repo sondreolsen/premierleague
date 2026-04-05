@@ -435,7 +435,7 @@ function updateTransferSuggestions() {
   }
 
   const scopedResults = filterTransfers(transferDataset, "", season);
-  const suggestions = [];
+  const matches = [];
   const seen = new Set();
 
   for (const item of scopedResults) {
@@ -462,19 +462,26 @@ function updateTransferSuggestions() {
         continue;
       }
 
-      if (searchText && !candidateKey.includes(searchText)) {
+      const score = getSuggestionScore(candidateKey, searchText);
+      if (searchText && score === null) {
         continue;
       }
 
       seen.add(candidateKey);
-      suggestions.push(trimmedCandidate);
-
-      if (suggestions.length >= 12) {
-        renderTransferSuggestions(suggestions);
-        return;
-      }
+      matches.push({ value: trimmedCandidate, score });
     }
   }
+
+  const suggestions = matches
+    .sort((a, b) => {
+      if ((a.score ?? 999) !== (b.score ?? 999)) {
+        return (a.score ?? 999) - (b.score ?? 999);
+      }
+
+      return a.value.localeCompare(b.value, "no");
+    })
+    .slice(0, 12)
+    .map((item) => item.value);
 
   renderTransferSuggestions(suggestions);
 }
@@ -537,6 +544,48 @@ function syncSuggestionSelection() {
 function applySuggestion(value) {
   transferQueryInput.value = value || "";
   hideTransferSuggestions();
+}
+
+function getSuggestionScore(candidate, searchText) {
+  if (!searchText) {
+    return 0;
+  }
+
+  const directIndex = candidate.indexOf(searchText);
+  if (directIndex === 0) {
+    return 0;
+  }
+
+  if (directIndex > 0) {
+    return 10 + directIndex;
+  }
+
+  const candidateWords = candidate.split(/[\s-]+/).filter(Boolean);
+  const wordStartMatch = candidateWords.findIndex((word) => word.startsWith(searchText));
+  if (wordStartMatch >= 0) {
+    return 5 + wordStartMatch;
+  }
+
+  if (isSubsequenceMatch(candidate, searchText)) {
+    return 30;
+  }
+
+  return null;
+}
+
+function isSubsequenceMatch(candidate, searchText) {
+  let candidateIndex = 0;
+  let searchIndex = 0;
+
+  while (candidateIndex < candidate.length && searchIndex < searchText.length) {
+    if (candidate[candidateIndex] === searchText[searchIndex]) {
+      searchIndex += 1;
+    }
+
+    candidateIndex += 1;
+  }
+
+  return searchIndex === searchText.length;
 }
 
 function filterTransfers(results, query, season) {
