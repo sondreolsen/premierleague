@@ -44,7 +44,6 @@ body::before {
 }
 
 .hero,
-.control-panel,
 .transfer-card,
 .status-card,
 .table-card {
@@ -92,14 +91,6 @@ h1 {
   margin: 16px 0 0;
   font-size: 1.05rem;
   color: var(--muted);
-}
-
-.control-panel {
-  display: grid;
-  grid-template-columns: minmax(0, 1.8fr) minmax(110px, 0.55fr) auto;
-  gap: 16px;
-  margin-top: 22px;
-  padding: 20px;
 }
 
 .field {
@@ -272,7 +263,6 @@ tbody tr td:last-child {
   }
 
   .hero,
-  .control-panel,
   .transfer-card,
   .status-card,
   .table-card {
@@ -280,16 +270,11 @@ tbody tr td:last-child {
   }
 
   .hero,
-  .control-panel,
   .transfer-card,
   .status-card,
   .table-card {
     padding-left: 16px;
     padding-right: 16px;
-  }
-
-  .control-panel {
-    grid-template-columns: 1fr;
   }
 
   .transfer-heading {

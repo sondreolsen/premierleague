@@ -2,7 +2,6 @@ const DEFAULT_SEASON = getDefaultSeason();
 const CURRENT_SEASON = DEFAULT_SEASON;
 const CURRENT_SEASON_LABEL = formatSeasonLabel(CURRENT_SEASON);
 
-const loadButton = document.querySelector("#loadButton");
 const statusText = document.querySelector("#statusText");
 const metaText = document.querySelector("#metaText");
 const tableBody = document.querySelector("#tableBody");
@@ -17,10 +16,6 @@ const transferTableBody = document.querySelector("#transferTableBody");
 tableTitle.textContent = `PL ${CURRENT_SEASON_LABEL}`;
 populateTransferSeasonOptions();
 transferSeasonInput.value = "";
-
-loadButton.addEventListener("click", () => {
-  loadTable();
-});
 
 transferSearchButton.addEventListener("click", () => {
   loadTransfers();
@@ -37,7 +32,6 @@ loadTable();
 async function loadTable() {
   setStatus("Henter offisiell Premier League-tabell ...", "");
   renderEmpty("Laster tabell ...");
-  loadButton.disabled = true;
 
   try {
     const payload = await fetchStandings(CURRENT_SEASON);
@@ -63,8 +57,6 @@ async function loadTable() {
   } catch (error) {
     renderEmpty("Kunne ikke laste tabellen.");
     setStatus(error.message || "Noe gikk galt ved henting av data.");
-  } finally {
-    loadButton.disabled = false;
   }
 }
 
