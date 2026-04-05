@@ -41,12 +41,10 @@ def main() -> None:
     season_counts: dict[str, int] = {}
 
     for start_year in range(START_SEASON, end_season + 1):
-        season_id = f"{start_year}-{str(start_year + 1)[-2:]}"
         try:
-            transfers = Transfers(target_season=season_id, league="Premier League")
-            teams = transfers.get_all_current_teams()
+            season_id, transfers, teams = load_season_transfers(start_year)
         except Exception as exc:
-            print(f"Skipping season {season_id}: {exc}")
+            print(f"Skipping season {start_year}/{start_year + 1}: {exc}")
             continue
 
         if not teams:
@@ -82,6 +80,28 @@ def main() -> None:
     }
 
     output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def load_season_transfers(start_year: int) -> tuple[str, Transfers, list[str]]:
+    season_formats = [
+        f"{start_year}-{start_year + 1}",
+        f"{start_year}-{str(start_year + 1)[-2:]}",
+    ]
+    last_error: Exception | None = None
+
+    for season_id in season_formats:
+        try:
+            transfers = Transfers(target_season=season_id, league="Premier League")
+            teams = transfers.get_all_current_teams()
+            if teams:
+                return season_id, transfers, teams
+        except Exception as exc:
+            last_error = exc
+
+    if last_error is not None:
+        raise last_error
+
+    raise RuntimeError("No teams returned for any supported season format.")
 
 
 def build_rows(transfers: Transfers, team: str, start_year: int, movement: str) -> list[dict[str, str]]:
