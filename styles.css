@@ -91,11 +91,14 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  justify-content: flex-end;
 }
 
 .field span {
   font-size: 0.92rem;
   color: var(--muted);
+  line-height: 1.2;
+  min-height: 1.2em;
 }
 
 input,
