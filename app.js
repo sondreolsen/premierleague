@@ -444,12 +444,14 @@ function updateTransferSuggestions() {
     const fromClub = formatClubName(item.fromClub || "");
     const toClub = formatClubName(item.toClub || "");
 
-    if (!direction) {
-      candidates.push(playerName, fromClub, toClub, `til ${toClub}`, `fra ${fromClub}`);
-    } else if (direction === "til") {
-      candidates.push(`til ${toClub}`);
+    candidates.push(playerName);
+
+    if (direction === "til") {
+      candidates.push(toClub);
     } else if (direction === "fra") {
-      candidates.push(`fra ${fromClub}`);
+      candidates.push(fromClub);
+    } else {
+      candidates.push(fromClub, toClub);
     }
 
     for (const candidate of candidates) {
