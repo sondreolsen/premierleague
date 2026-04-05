@@ -323,6 +323,34 @@ function Get-FeeRank {
   return 2
 }
 
+function Localize-FeeText {
+  param([string]$Fee)
+
+  if (-not $Fee) {
+    return $Fee
+  }
+
+  $normalized = $Fee.Trim()
+
+  if ($normalized -eq "Retired") {
+    return "Lagt opp"
+  }
+
+  return $normalized
+}
+
+function Localize-PeriodText {
+  param([string]$Period)
+
+  $normalized = ([string]$Period).Trim().ToLowerInvariant()
+
+  switch ($normalized) {
+    "summer" { return "Sommer" }
+    "winter" { return "Vinter" }
+    default { return $Period }
+  }
+}
+
 function Get-SeasonSortValue {
   param([string]$Season)
 
@@ -360,9 +388,9 @@ function Convert-TransferRow {
     playerName = $Row.player_name
     fromClub = $fromClub
     toClub = $toClub
-    fee = $Row.fee
+    fee = Localize-FeeText $Row.fee
     movement = $movement
-    period = $Row.transfer_period
+    period = Localize-PeriodText $Row.transfer_period
     season = $Row.season
     year = $Row.year
     position = $Row.position

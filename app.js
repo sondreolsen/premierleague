@@ -301,6 +301,10 @@ function formatFee(value) {
     return "Ikke oppgitt";
   }
 
+  if (value === "Retired") {
+    return "Lagt opp";
+  }
+
   return value;
 }
 
@@ -442,11 +446,11 @@ function getSeasonSortValue(season) {
 function getPeriodSortValue(period) {
   const normalized = (period || "").trim().toLowerCase();
 
-  if (normalized === "winter") {
+  if (normalized === "winter" || normalized === "vinter") {
     return 2;
   }
 
-  if (normalized === "summer") {
+  if (normalized === "summer" || normalized === "sommer") {
     return 1;
   }
 
