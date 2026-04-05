@@ -12,6 +12,8 @@ $script:PublicFiles = @{
   "/styles.css" = "styles.css"
   "/app.js" = "app.js"
 }
+$script:TransferCache = $null
+$script:TransferCacheFetchedAt = $null
 
 function Get-EnvFileValues {
   $envPath = Join-Path $script:ProjectRoot ".env.local"
@@ -153,6 +155,101 @@ function Get-ThrottleInfo {
   }
 }
 
+function Get-TransferRows {
+  $cacheValid = $script:TransferCache -and $script:TransferCacheFetchedAt -and ((Get-Date) - $script:TransferCacheFetchedAt).TotalMinutes -lt 30
+  if ($cacheValid) {
+    return $script:TransferCache
+  }
+
+  $uri = "https://raw.githubusercontent.com/ewenme/transfers/master/data/premier-league.csv"
+
+  try {
+    $csvText = Invoke-RestMethod -Uri $uri -Method Get
+  } catch {
+    throw [System.Exception]::new("Klarte ikke a hente overgangsdata fra GitHub-datasettet.")
+  }
+
+  $rows = $csvText | ConvertFrom-Csv
+  $script:TransferCache = @($rows)
+  $script:TransferCacheFetchedAt = Get-Date
+  return $script:TransferCache
+}
+
+function Convert-TransferRow {
+  param([Parameter(Mandatory = $true)]$Row)
+
+  $movement = [string]$Row.transfer_movement
+  $fromClub = if ($movement -eq "in") { $Row.club_involved_name } else { $Row.club_name }
+  $toClub = if ($movement -eq "in") { $Row.club_name } else { $Row.club_involved_name }
+
+  return @{
+    playerName = $Row.player_name
+    fromClub = $fromClub
+    toClub = $toClub
+    fee = $Row.fee
+    movement = $movement
+    period = $Row.transfer_period
+    season = $Row.season
+    year = $Row.year
+    position = $Row.position
+  }
+}
+
+function Search-Transfers {
+  param(
+    [string]$Query,
+    [string]$Season
+  )
+
+  $rows = Get-TransferRows
+  $normalizedQuery = if ($Query) { $Query.Trim().ToLowerInvariant() } else { "" }
+  $direction = "any"
+  $searchText = $normalizedQuery
+
+  if ($normalizedQuery -match "^\s*til\s+(.+)$") {
+    $direction = "to"
+    $searchText = $Matches[1].Trim()
+  } elseif ($normalizedQuery -match "^\s*fra\s+(.+)$") {
+    $direction = "from"
+    $searchText = $Matches[1].Trim()
+  }
+
+  $results = foreach ($row in $rows) {
+    $item = Convert-TransferRow -Row $row
+    $matchesSeason = (-not $Season) -or ($item.season -eq $Season)
+
+    if (-not $matchesSeason) {
+      continue
+    }
+
+    if (-not $searchText) {
+      $item
+      continue
+    }
+
+    $player = ([string]$item.playerName).ToLowerInvariant()
+    $fromClub = ([string]$item.fromClub).ToLowerInvariant()
+    $toClub = ([string]$item.toClub).ToLowerInvariant()
+
+    $matched = switch ($direction) {
+      "to" { $toClub -like "*$searchText*" }
+      "from" { $fromClub -like "*$searchText*" }
+      default {
+        ($player -like "*$searchText*") -or ($fromClub -like "*$searchText*") -or ($toClub -like "*$searchText*")
+      }
+    }
+
+    if ($matched) {
+      $item
+    }
+  }
+
+  $ordered = $results |
+    Sort-Object @{ Expression = { [int]$_.year }; Descending = $true }, @{ Expression = { $_.playerName } }
+
+  return @($ordered | Select-Object -First 100)
+}
+
 function Get-StandingsData {
   param([int]$Season)
 
@@ -247,6 +344,32 @@ function Handle-ApiRequest {
   }
 }
 
+function Handle-TransfersRequest {
+  param(
+    [Parameter(Mandatory = $true)]$Stream,
+    [Parameter(Mandatory = $true)][string]$Target
+  )
+
+  $uri = [System.Uri]::new("http://localhost:$Port$Target")
+  $query = Get-QueryParams -QueryString $uri.Query
+  $search = if ($query.ContainsKey("q")) { [string]$query["q"] } else { "" }
+  $season = if ($query.ContainsKey("season")) { [string]$query["season"] } else { "" }
+
+  try {
+    $results = Search-Transfers -Query $search -Season $season
+    Send-JsonResponse -Stream $Stream -StatusCode 200 -StatusText "OK" -Body @{
+      query = $search
+      season = $season
+      count = @($results).Count
+      results = @($results)
+      source = "https://github.com/ewenme/transfers"
+      fetchedAt = (Get-Date).ToString("o")
+    }
+  } catch {
+    Send-JsonResponse -Stream $Stream -StatusCode 502 -StatusText "Bad Gateway" -Body @{ error = $_.Exception.Message }
+  }
+}
+
 $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $Port)
 $listener.Start()
 
@@ -290,6 +413,11 @@ try {
 
       if ($path -eq "/api/standings") {
         Handle-ApiRequest -Stream $stream -Target $target
+        continue
+      }
+
+      if ($path -eq "/api/transfers") {
+        Handle-TransfersRequest -Stream $stream -Target $target
         continue
       }
 

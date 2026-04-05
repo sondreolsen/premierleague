@@ -32,6 +32,63 @@
         <button id="loadButton" type="button">Oppdater tabell</button>
       </section>
 
+      <section class="transfer-card">
+        <div class="transfer-heading">
+          <div>
+            <p class="eyebrow">Overganger</p>
+            <h2>Sok i spillere inn og ut av Premier League-klubber</h2>
+          </div>
+          <p class="transfer-help">
+            Skriv for eksempel <code>Arsenal</code>, <code>til Liverpool</code>,
+            <code>fra Chelsea</code> eller et spillernavn.
+          </p>
+        </div>
+
+        <div class="transfer-controls">
+          <label class="field">
+            <span>Sok</span>
+            <input
+              id="transferQueryInput"
+              type="text"
+              placeholder="Arsenal, til Liverpool, fra Chelsea, Cole Palmer ..."
+            />
+          </label>
+
+          <label class="field field-small">
+            <span>Sesongfilter</span>
+            <input id="transferSeasonInput" type="text" placeholder="f.eks. 2025/2026" />
+          </label>
+
+          <button id="transferSearchButton" type="button">Finn overganger</button>
+        </div>
+
+        <p id="transferStatusText" class="transfer-status">
+          Overgangssoket er klart. Trykk sok eller skriv noe i boksen.
+        </p>
+
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Spiller</th>
+                <th>Fra</th>
+                <th>Til</th>
+                <th>Sum</th>
+                <th>Vindu</th>
+                <th>Sesong</th>
+              </tr>
+            </thead>
+            <tbody id="transferTableBody">
+              <tr>
+                <td colspan="6" class="empty-state">
+                  Ingen overganger lastet ennå.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <section class="status-card">
         <p id="statusText">Starter opp. Husk å kjøre den lokale serveren først.</p>
         <p id="metaText" class="meta"></p>

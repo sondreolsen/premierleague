@@ -5,11 +5,26 @@ const loadButton = document.querySelector("#loadButton");
 const statusText = document.querySelector("#statusText");
 const metaText = document.querySelector("#metaText");
 const tableBody = document.querySelector("#tableBody");
+const transferQueryInput = document.querySelector("#transferQueryInput");
+const transferSeasonInput = document.querySelector("#transferSeasonInput");
+const transferSearchButton = document.querySelector("#transferSearchButton");
+const transferStatusText = document.querySelector("#transferStatusText");
+const transferTableBody = document.querySelector("#transferTableBody");
 
 seasonInput.value = String(DEFAULT_SEASON);
 
 loadButton.addEventListener("click", () => {
   loadTable();
+});
+
+transferSearchButton.addEventListener("click", () => {
+  loadTransfers();
+});
+
+transferQueryInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    loadTransfers();
+  }
 });
 
 loadTable();
@@ -68,6 +83,54 @@ async function fetchStandings(season) {
   return payload;
 }
 
+async function loadTransfers() {
+  const query = transferQueryInput.value.trim();
+  const season = transferSeasonInput.value.trim();
+
+  transferStatusText.textContent = "Henter overgangsdata ...";
+  renderTransferEmpty("Laster overganger ...");
+  transferSearchButton.disabled = true;
+
+  try {
+    const payload = await fetchTransfers(query, season);
+
+    if (!payload.results.length) {
+      renderTransferEmpty("Fant ingen overganger som matcher soket.");
+      transferStatusText.textContent = "Ingen treff i overgangsdataene.";
+      return;
+    }
+
+    renderTransfers(payload.results);
+    transferStatusText.textContent = `${payload.count} overganger vist fra datasettet i ewenme/transfers.`;
+  } catch (error) {
+    renderTransferEmpty("Kunne ikke laste overgangene.");
+    transferStatusText.textContent = error.message || "Noe gikk galt ved henting av overgangsdata.";
+  } finally {
+    transferSearchButton.disabled = false;
+  }
+}
+
+async function fetchTransfers(query, season) {
+  const url = new URL("/api/transfers", window.location.origin);
+
+  if (query) {
+    url.searchParams.set("q", query);
+  }
+
+  if (season) {
+    url.searchParams.set("season", season);
+  }
+
+  const response = await fetch(url);
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(payload.error || `Lokal server svarte med status ${response.status}.`);
+  }
+
+  return payload;
+}
+
 function renderTable(table) {
   tableBody.innerHTML = table
     .map(
@@ -93,6 +156,27 @@ function renderEmpty(message) {
   tableBody.innerHTML = `<tr><td colspan="10" class="empty-state">${message}</td></tr>`;
 }
 
+function renderTransfers(results) {
+  transferTableBody.innerHTML = results
+    .map(
+      (item) => `
+        <tr>
+          <td>${item.playerName}</td>
+          <td>${item.fromClub || "-"}</td>
+          <td>${item.toClub || "-"}</td>
+          <td>${formatFee(item.fee)}</td>
+          <td>${item.period || "-"}</td>
+          <td>${item.season || item.year || "-"}</td>
+        </tr>
+      `
+    )
+    .join("");
+}
+
+function renderTransferEmpty(message) {
+  transferTableBody.innerHTML = `<tr><td colspan="6" class="empty-state">${message}</td></tr>`;
+}
+
 function setStatus(primary, secondary = "") {
   statusText.textContent = primary;
   metaText.textContent = secondary;
@@ -100,6 +184,14 @@ function setStatus(primary, secondary = "") {
 
 function formatGoalDifference(value) {
   return value > 0 ? `+${value}` : String(value);
+}
+
+function formatFee(value) {
+  if (!value || value === "?" || value === "-") {
+    return "Ikke oppgitt";
+  }
+
+  return value;
 }
 
 function getDefaultSeason() {

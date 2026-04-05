@@ -45,6 +45,7 @@ body::before {
 
 .hero,
 .control-panel,
+.transfer-card,
 .status-card,
 .table-card {
   position: relative;
@@ -150,9 +151,45 @@ button:hover {
 }
 
 .status-card,
+.transfer-card,
 .table-card {
   margin-top: 22px;
   padding: 20px 22px;
+}
+
+.transfer-card {
+  background: var(--panel-strong);
+}
+
+.transfer-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.transfer-heading h2 {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+}
+
+.transfer-help {
+  max-width: 42ch;
+  margin: 0;
+  color: var(--muted);
+}
+
+.transfer-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(170px, 0.8fr) auto;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.transfer-status {
+  margin: 0 0 14px;
+  color: var(--muted);
 }
 
 .status-card p {
@@ -220,6 +257,7 @@ tbody tr td:last-child {
 
   .hero,
   .control-panel,
+  .transfer-card,
   .status-card,
   .table-card {
     border-radius: 24px;
@@ -227,6 +265,7 @@ tbody tr td:last-child {
 
   .hero,
   .control-panel,
+  .transfer-card,
   .status-card,
   .table-card {
     padding-left: 16px;
@@ -234,6 +273,15 @@ tbody tr td:last-child {
   }
 
   .control-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .transfer-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .transfer-controls {
     grid-template-columns: 1fr;
   }
 
