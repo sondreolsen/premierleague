@@ -26,8 +26,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install transfer builder dependencies
+        run: pip install premier-league==1.0.0
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
+      - name: Generate transfers data
+        run: python scripts/build-transfers.py site/data/transfers.json
 
       - name: Generate static data
         shell: pwsh

@@ -274,15 +274,19 @@ function Get-TransferRows {
     return $script:TransferCache
   }
 
-  $uri = "https://raw.githubusercontent.com/ewenme/transfers/master/data/premier-league.csv"
+  $snapshotPath = Join-Path $script:ProjectRoot "data\\transfers.json"
 
   try {
-    $csvText = Invoke-RestMethod -Uri $uri -Method Get
+    if (-not (Test-Path -LiteralPath $snapshotPath)) {
+      throw "Fant ikke lokal transfers.json."
+    }
+
+    $payload = Get-Content -LiteralPath $snapshotPath -Raw | ConvertFrom-Json
   } catch {
-    throw [System.Exception]::new("Klarte ikke a hente overgangsdata fra GitHub-datasettet.")
+    throw [System.Exception]::new("Klarte ikke a lese transferdata fra lokal snapshot-fil.")
   }
 
-  $rows = $csvText | ConvertFrom-Csv
+  $rows = @($payload.results)
   $script:TransferCache = @($rows)
   $script:TransferCacheFetchedAt = Get-Date
   return $script:TransferCache
@@ -379,6 +383,20 @@ function Get-PeriodSortValue {
 
 function Convert-TransferRow {
   param([Parameter(Mandatory = $true)]$Row)
+
+  if ($Row.PSObject.Properties["playerName"]) {
+    return @{
+      playerName = [string]$Row.playerName
+      fromClub = Normalize-ClubName ([string]$Row.fromClub)
+      toClub = Normalize-ClubName ([string]$Row.toClub)
+      fee = Localize-FeeText ([string]$Row.fee)
+      movement = [string]$Row.movement
+      period = Localize-PeriodText ([string]$Row.period)
+      season = [string]$Row.season
+      year = [string]$Row.year
+      position = [string]$Row.position
+    }
+  }
 
   $movement = [string]$Row.transfer_movement
   $fromClub = if ($movement -eq "in") { Normalize-ClubName $Row.club_involved_name } else { Normalize-ClubName $Row.club_name }
@@ -606,7 +624,7 @@ function Handle-TransfersRequest {
       season = $season
       count = @($results).Count
       results = @($results)
-      source = "https://github.com/ewenme/transfers"
+      source = "https://github.com/kayoMichael/premier_league"
       fetchedAt = (Get-Date).ToString("o")
     }
   } catch {
