@@ -2,8 +2,6 @@ const DEFAULT_SEASON = getDefaultSeason();
 const CURRENT_SEASON = DEFAULT_SEASON;
 const CURRENT_SEASON_LABEL = formatSeasonLabel(CURRENT_SEASON);
 
-const statusText = document.querySelector("#statusText");
-const metaText = document.querySelector("#metaText");
 const tableBody = document.querySelector("#tableBody");
 const tableTitle = document.querySelector("#tableTitle");
 const transferQueryInput = document.querySelector("#transferQueryInput");
@@ -58,7 +56,6 @@ transferQueryInput.addEventListener("keydown", (event) => {
 loadTable();
 
 async function loadTable() {
-  setStatus("Henter offisiell Premier League-tabell ...", "");
   renderEmpty("Laster tabell ...");
 
   try {
@@ -67,24 +64,12 @@ async function loadTable() {
 
     if (!table.length) {
       renderEmpty("Fant ingen tabell for denne sesongen.");
-      setStatus("Ingen tabell tilgjengelig ennå.", formatMeta("", payload.throttle));
       return;
     }
 
     renderTable(table);
-
-    const updatedText = payload.lastUpdated
-      ? `Sist oppdatert: ${formatDate(payload.lastUpdated)}`
-      : "";
-    const sourceText = payload.mode === "live" ? "Kilde: lokal live-proxy." : "Kilde: publisert GitHub Pages-snapshot.";
-
-    setStatus(
-      `Tabellen er hentet fra offisielt standings-endepunkt for PL ${CURRENT_SEASON_LABEL}.`,
-      formatMeta([updatedText, sourceText].filter(Boolean).join(" "), payload.throttle)
-    );
   } catch (error) {
     renderEmpty("Kunne ikke laste tabellen.");
-    setStatus(error.message || "Noe gikk galt ved henting av data.");
   }
 }
 
@@ -230,11 +215,6 @@ function renderTransfers(results) {
 
 function renderTransferEmpty(message) {
   transferTableBody.innerHTML = `<tr><td colspan="6" class="empty-state">${message}</td></tr>`;
-}
-
-function setStatus(primary, secondary = "") {
-  statusText.textContent = primary;
-  metaText.textContent = secondary;
 }
 
 function formatGoalDifference(value) {
@@ -396,29 +376,4 @@ function getPeriodSortValue(period) {
   }
 
   return 0;
-}
-
-function formatDate(value) {
-  return new Intl.DateTimeFormat("nb-NO", {
-    dateStyle: "long",
-    timeStyle: "short"
-  }).format(new Date(value));
-}
-
-function formatMeta(baseText, throttle) {
-  const parts = [];
-
-  if (baseText) {
-    parts.push(baseText);
-  }
-
-  if (throttle?.requestsAvailable) {
-    parts.push(`Gjenværende kall: ${throttle.requestsAvailable}`);
-  }
-
-  if (throttle?.requestCounterReset) {
-    parts.push(`Reset om: ${throttle.requestCounterReset} s`);
-  }
-
-  return parts.join(" | ");
 }
