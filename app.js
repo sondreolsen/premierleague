@@ -8,6 +8,7 @@ const transferQueryInput = document.querySelector("#transferQueryInput");
 const transferSeasonInput = document.querySelector("#transferSeasonInput");
 const transferSearchButton = document.querySelector("#transferSearchButton");
 const transferTableBody = document.querySelector("#transferTableBody");
+const transferSuggestions = document.querySelector("#transferSuggestions");
 const transferSortButtons = [...document.querySelectorAll(".sort-button")];
 const CLUB_ALIASES = {
   spurs: "tottenham hotspur",
@@ -114,6 +115,7 @@ const CLUB_ALIASES = {
   "brighton & hove albion": "brighton & hove albion"
 };
 let currentTransferResults = [];
+let transferDataset = [];
 let transferSort = {
   key: "season",
   direction: "desc"
@@ -131,6 +133,14 @@ transferQueryInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     loadTransfers();
   }
+});
+
+transferQueryInput.addEventListener("input", () => {
+  updateTransferSuggestions();
+});
+
+transferSeasonInput.addEventListener("change", () => {
+  updateTransferSuggestions();
 });
 
 for (const button of transferSortButtons) {
@@ -151,6 +161,7 @@ for (const button of transferSortButtons) {
 
 loadTable();
 loadTransferSeasonOptions();
+loadTransferDataset();
 
 async function loadTable() {
   renderEmpty("Laster tabell ...");
@@ -229,6 +240,18 @@ async function loadTransfers() {
     renderTransferEmpty("Kunne ikke laste overgangene.");
   } finally {
     transferSearchButton.disabled = false;
+  }
+}
+
+async function loadTransferDataset() {
+  try {
+    const response = await fetch(new URL("./data/transfers.json", window.location.href));
+    const payload = await response.json().catch(() => ({}));
+    transferDataset = payload.results || [];
+  } catch {
+    transferDataset = [];
+  } finally {
+    updateTransferSuggestions();
   }
 }
 
@@ -354,6 +377,68 @@ function formatClubName(value) {
   }
 
   return value;
+}
+
+function updateTransferSuggestions() {
+  if (!transferSuggestions) {
+    return;
+  }
+
+  const query = transferQueryInput.value.trim();
+  const season = normalizeTransferSeason(transferSeasonInput.value);
+  const normalizedQuery = query.toLowerCase();
+  let direction = "";
+  let searchText = normalizedQuery;
+
+  if (normalizedQuery.startsWith("til ")) {
+    direction = "til";
+    searchText = normalizedQuery.slice(4).trim();
+  } else if (normalizedQuery.startsWith("fra ")) {
+    direction = "fra";
+    searchText = normalizedQuery.slice(4).trim();
+  }
+
+  const scopedResults = filterTransfers(transferDataset, "", season);
+  const suggestions = [];
+  const seen = new Set();
+
+  for (const item of scopedResults) {
+    const candidates = [];
+    const playerName = item.playerName || "";
+    const fromClub = formatClubName(item.fromClub || "");
+    const toClub = formatClubName(item.toClub || "");
+
+    if (!direction) {
+      candidates.push(playerName, fromClub, toClub, `til ${toClub}`, `fra ${fromClub}`);
+    } else if (direction === "til") {
+      candidates.push(`til ${toClub}`);
+    } else if (direction === "fra") {
+      candidates.push(`fra ${fromClub}`);
+    }
+
+    for (const candidate of candidates) {
+      const trimmedCandidate = candidate.trim();
+      const candidateKey = trimmedCandidate.toLowerCase();
+
+      if (!trimmedCandidate || seen.has(candidateKey)) {
+        continue;
+      }
+
+      if (searchText && !candidateKey.includes(searchText)) {
+        continue;
+      }
+
+      seen.add(candidateKey);
+      suggestions.push(trimmedCandidate);
+
+      if (suggestions.length >= 12) {
+        transferSuggestions.innerHTML = suggestions.map((itemValue) => `<option value="${escapeHtml(itemValue)}"></option>`).join("");
+        return;
+      }
+    }
+  }
+
+  transferSuggestions.innerHTML = suggestions.map((itemValue) => `<option value="${escapeHtml(itemValue)}"></option>`).join("");
 }
 
 function filterTransfers(results, query, season) {
@@ -549,4 +634,12 @@ function updateTransferSortButtons() {
     button.textContent = `${button.textContent.replace(/ [↑↓]$/, "")}${arrow}`;
     button.setAttribute("aria-pressed", isActive ? "true" : "false");
   }
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
