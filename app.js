@@ -10,7 +10,6 @@ const transferQueryInput = document.querySelector("#transferQueryInput");
 const transferSeasonInput = document.querySelector("#transferSeasonInput");
 const transferSeasonOptions = document.querySelector("#transferSeasonOptions");
 const transferSearchButton = document.querySelector("#transferSearchButton");
-const transferStatusText = document.querySelector("#transferStatusText");
 const transferTableBody = document.querySelector("#transferTableBody");
 const CLUB_ALIASES = {
   spurs: "tottenham hotspur",
@@ -126,7 +125,6 @@ async function loadTransfers() {
   const query = transferQueryInput.value.trim();
   const season = normalizeTransferSeason(transferSeasonInput.value.trim());
 
-  transferStatusText.textContent = "Henter overgangsdata ...";
   renderTransferEmpty("Laster overganger ...");
   transferSearchButton.disabled = true;
 
@@ -135,16 +133,12 @@ async function loadTransfers() {
 
     if (!payload.results.length) {
       renderTransferEmpty("Fant ingen overganger som matcher soket.");
-      transferStatusText.textContent = "Ingen treff i overgangsdataene.";
       return;
     }
 
     renderTransfers(payload.results);
-    const sourceText = payload.mode === "live" ? "live backend" : "publisert GitHub Pages-data";
-    transferStatusText.textContent = `${payload.count} overganger vist fra ${sourceText}.`;
   } catch (error) {
     renderTransferEmpty("Kunne ikke laste overgangene.");
-    transferStatusText.textContent = error.message || "Noe gikk galt ved henting av overgangsdata.";
   } finally {
     transferSearchButton.disabled = false;
   }

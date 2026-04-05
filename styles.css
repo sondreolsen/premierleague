@@ -189,11 +189,6 @@ button:hover {
   margin-bottom: 14px;
 }
 
-.transfer-status {
-  margin: 0 0 14px;
-  color: var(--muted);
-}
-
 .status-card p {
   margin: 0;
 }
