@@ -333,7 +333,7 @@ function formatFee(value) {
     return "Ikke oppgitt";
   }
 
-  if (value === "Retired") {
+  if (String(value).trim().toLowerCase() === "retired") {
     return "Lagt opp";
   }
 

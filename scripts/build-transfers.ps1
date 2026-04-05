@@ -33,7 +33,7 @@ function Format-Fee {
   param($Fee, [bool]$IsLoan, [string]$DealingClub)
 
   if ($DealingClub -eq "Retired") {
-    return "Retired"
+    return "Lagt opp"
   }
 
   if ($IsLoan) {
