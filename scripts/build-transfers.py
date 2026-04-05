@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -38,26 +38,47 @@ def main() -> None:
 
     results: list[dict[str, str]] = []
 
+    season_counts: dict[str, int] = {}
+
     for start_year in range(START_SEASON, end_season + 1):
-        season_id = f"{start_year}-{start_year + 1}"
+        season_id = f"{start_year}-{str(start_year + 1)[-2:]}"
         try:
             transfers = Transfers(target_season=season_id, league="Premier League")
             teams = transfers.get_all_current_teams()
-        except Exception:
+        except Exception as exc:
+            print(f"Skipping season {season_id}: {exc}")
             continue
 
         if not teams:
+            print(f"Skipping season {season_id}: no teams returned")
             continue
 
+        season_total = 0
         for team in teams:
-            results.extend(build_rows(transfers, team, start_year, movement="in"))
-            results.extend(build_rows(transfers, team, start_year, movement="out"))
+            incoming = build_rows(transfers, team, start_year, movement="in")
+            outgoing = build_rows(transfers, team, start_year, movement="out")
+            results.extend(incoming)
+            results.extend(outgoing)
+            season_total += len(incoming) + len(outgoing)
+
+        season_counts[f"{start_year}/{start_year + 1}"] = season_total
+        print(f"Collected {season_total} rows for {season_id}")
+
+    deduped_results = dedupe(results)
+
+    if not deduped_results:
+        raise RuntimeError("No transfer results were generated from premier_league.")
+
+    non_empty_seasons = {season: count for season, count in season_counts.items() if count > 0}
+    if not non_empty_seasons:
+        raise RuntimeError("premier_league returned zero transfer rows for every season.")
 
     payload = {
-        "generatedAt": date.today().isoformat(),
+        "generatedAt": datetime.now().astimezone().isoformat(),
         "source": "https://github.com/kayoMichael/premier_league",
-        "count": len(results),
-        "results": [item for item in dedupe(results)],
+        "count": len(deduped_results),
+        "seasonCounts": non_empty_seasons,
+        "results": deduped_results,
     }
 
     output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
