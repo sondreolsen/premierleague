@@ -37,7 +37,7 @@ function Format-Fee {
   }
 
   if ($IsLoan) {
-    return "loan transfer"
+    return "Lån"
   }
 
   if ($null -eq $Fee -or [string]::IsNullOrWhiteSpace([string]$Fee)) {

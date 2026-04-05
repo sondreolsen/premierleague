@@ -333,6 +333,10 @@ function formatFee(value) {
     return "Ikke oppgitt";
   }
 
+  if (String(value).trim().toLowerCase() === "loan transfer") {
+    return "Lån";
+  }
+
   if (String(value).trim().toLowerCase() === "retired") {
     return "Lagt opp";
   }
