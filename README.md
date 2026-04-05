@@ -6,6 +6,9 @@ I tillegg kan siden søke i overgangsdata fra [ewenme/transfers](https://github.
 
 Prosjektet er også klargjort for GitHub Pages. Da bygges statiske JSON-filer via GitHub Actions, og selve nettsiden publiseres uten at tokenet eksponeres.
 
+Hero-bildet bruker en fotballillustrasjon fra Wikimedia Commons, publisert som CC0/public domain:
+https://commons.wikimedia.org/wiki/File:Soccerball.svg
+
 ## Oppsett
 
 1. Lag en fil som heter `.env.local` i prosjektmappen.
