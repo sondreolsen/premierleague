@@ -722,7 +722,61 @@ function compareTransferField(a, b, key) {
     return getPeriodSortValue(a.period) - getPeriodSortValue(b.period);
   }
 
+  if (key === "fee") {
+    return compareTransferFee(a.fee, b.fee);
+  }
+
   return String(a[key] || "").localeCompare(String(b[key] || ""), "no");
+}
+
+function compareTransferFee(aFee, bFee) {
+  const aValue = getFeeSortValue(aFee);
+  const bValue = getFeeSortValue(bFee);
+
+  if (aValue.rank !== bValue.rank) {
+    return aValue.rank - bValue.rank;
+  }
+
+  if (aValue.amount !== bValue.amount) {
+    return aValue.amount - bValue.amount;
+  }
+
+  return aValue.label.localeCompare(bValue.label, "no");
+}
+
+function getFeeSortValue(rawValue) {
+  const value = String(rawValue || "").trim();
+  const normalized = value.toLowerCase();
+
+  if (!value || value === "-" || normalized === "ikke oppgitt") {
+    return { rank: 0, amount: 0, label: value };
+  }
+
+  if (normalized === "lån" || normalized === "loan transfer") {
+    return { rank: 1, amount: 0, label: value };
+  }
+
+  if (normalized === "free transfer") {
+    return { rank: 2, amount: 0, label: value };
+  }
+
+  const cleaned = value.replace(/\s/g, "").replace(",", ".");
+  const millionMatch = cleaned.match(/([\d.]+)m/i);
+  if (millionMatch) {
+    return { rank: 3, amount: Number.parseFloat(millionMatch[1]) * 1000000, label: value };
+  }
+
+  const thousandMatch = cleaned.match(/([\d.]+)k/i);
+  if (thousandMatch) {
+    return { rank: 3, amount: Number.parseFloat(thousandMatch[1]) * 1000, label: value };
+  }
+
+  const numericMatch = cleaned.match(/([\d.]+)/);
+  if (numericMatch) {
+    return { rank: 3, amount: Number.parseFloat(numericMatch[1]), label: value };
+  }
+
+  return { rank: 0, amount: 0, label: value };
 }
 
 function updateTransferSortButtons() {
