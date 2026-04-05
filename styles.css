@@ -164,6 +164,19 @@ button:hover {
   background: var(--panel-strong);
 }
 
+.table-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.table-heading h2 {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+}
+
 .transfer-heading {
   display: flex;
   justify-content: space-between;
@@ -280,6 +293,11 @@ tbody tr td:last-child {
   }
 
   .transfer-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .table-heading {
     align-items: start;
     flex-direction: column;
   }

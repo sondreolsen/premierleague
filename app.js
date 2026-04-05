@@ -1,10 +1,12 @@
 const DEFAULT_SEASON = getDefaultSeason();
+const CURRENT_SEASON = DEFAULT_SEASON;
+const CURRENT_SEASON_LABEL = formatSeasonLabel(CURRENT_SEASON);
 
-const seasonInput = document.querySelector("#seasonInput");
 const loadButton = document.querySelector("#loadButton");
 const statusText = document.querySelector("#statusText");
 const metaText = document.querySelector("#metaText");
 const tableBody = document.querySelector("#tableBody");
+const tableTitle = document.querySelector("#tableTitle");
 const transferQueryInput = document.querySelector("#transferQueryInput");
 const transferSeasonInput = document.querySelector("#transferSeasonInput");
 const transferSeasonOptions = document.querySelector("#transferSeasonOptions");
@@ -12,7 +14,8 @@ const transferSearchButton = document.querySelector("#transferSearchButton");
 const transferStatusText = document.querySelector("#transferStatusText");
 const transferTableBody = document.querySelector("#transferTableBody");
 
-populateSeasonOptions();
+tableTitle.textContent = `PL ${CURRENT_SEASON_LABEL}`;
+populateTransferSeasonOptions();
 transferSeasonInput.value = "";
 
 loadButton.addEventListener("click", () => {
@@ -32,23 +35,16 @@ transferQueryInput.addEventListener("keydown", (event) => {
 loadTable();
 
 async function loadTable() {
-  const season = Number.parseInt(seasonInput.value, 10);
-
-  if (!Number.isInteger(season) || season < 2020) {
-    setStatus("Velg en gyldig sesong.");
-    return;
-  }
-
   setStatus("Henter offisiell Premier League-tabell ...", "");
   renderEmpty("Laster tabell ...");
   loadButton.disabled = true;
 
   try {
-    const payload = await fetchStandings(season);
+    const payload = await fetchStandings(CURRENT_SEASON);
     const table = payload.table;
 
     if (!table.length) {
-      renderEmpty("Fant ingen tabell for valgt sesong.");
+      renderEmpty("Fant ingen tabell for denne sesongen.");
       setStatus("Ingen tabell tilgjengelig ennå.", formatMeta("", payload.throttle));
       return;
     }
@@ -61,7 +57,7 @@ async function loadTable() {
     const sourceText = payload.mode === "live" ? "Kilde: lokal live-proxy." : "Kilde: publisert GitHub Pages-snapshot.";
 
     setStatus(
-      `Tabellen er hentet fra offisielt standings-endepunkt.`,
+      `Tabellen er hentet fra offisielt standings-endepunkt for PL ${CURRENT_SEASON_LABEL}.`,
       formatMeta([updatedText, sourceText].filter(Boolean).join(" "), payload.throttle)
     );
   } catch (error) {
@@ -287,18 +283,12 @@ function getDefaultSeason() {
   return month >= 6 ? year : year - 1;
 }
 
-function populateSeasonOptions() {
+function populateTransferSeasonOptions() {
   const seasonYears = [];
 
   for (let year = DEFAULT_SEASON; year >= 2020; year -= 1) {
     seasonYears.push(year);
   }
-
-  seasonInput.innerHTML = seasonYears
-    .map((year) => `<option value="${year}">${formatSeasonLabel(year)}</option>`)
-    .join("");
-
-  seasonInput.value = String(DEFAULT_SEASON);
 
   transferSeasonOptions.innerHTML = seasonYears
     .map((year) => {
