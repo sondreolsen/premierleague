@@ -176,12 +176,6 @@ button:hover {
   font-size: clamp(1.5rem, 3vw, 2.2rem);
 }
 
-.transfer-help {
-  max-width: 42ch;
-  margin: 0;
-  color: var(--muted);
-}
-
 .transfer-controls {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(170px, 0.8fr) auto;
