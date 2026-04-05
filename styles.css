@@ -250,7 +250,12 @@ tbody tr:hover {
   background: rgba(255, 255, 255, 0.66);
 }
 
-tbody tr:nth-child(-n + 4) td:first-child {
+#tableBody tr:nth-child(-n + 4) td:first-child {
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+#transferTableBody td:first-child {
   color: var(--accent-strong);
   font-weight: 700;
 }
