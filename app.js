@@ -6,7 +6,6 @@ const tableBody = document.querySelector("#tableBody");
 const tableTitle = document.querySelector("#tableTitle");
 const transferQueryInput = document.querySelector("#transferQueryInput");
 const transferSeasonInput = document.querySelector("#transferSeasonInput");
-const transferSeasonOptions = document.querySelector("#transferSeasonOptions");
 const transferSearchButton = document.querySelector("#transferSearchButton");
 const transferTableBody = document.querySelector("#transferTableBody");
 const transferSortButtons = [...document.querySelectorAll(".sort-button")];
@@ -121,7 +120,6 @@ let transferSort = {
 };
 
 tableTitle.textContent = `PL ${CURRENT_SEASON_LABEL}`;
-populateTransferSeasonOptions();
 transferSeasonInput.value = "";
 updateTransferSortButtons();
 
@@ -152,6 +150,7 @@ for (const button of transferSortButtons) {
 }
 
 loadTable();
+loadTransferSeasonOptions();
 
 async function loadTable() {
   renderEmpty("Laster tabell ...");
@@ -209,7 +208,7 @@ async function fetchStandings(season) {
 
 async function loadTransfers() {
   const query = transferQueryInput.value.trim();
-  const season = normalizeTransferSeason(transferSeasonInput.value.trim());
+  const season = normalizeTransferSeason(transferSeasonInput.value);
 
   renderTransferEmpty("Laster overganger ...");
   transferSearchButton.disabled = true;
@@ -398,22 +397,6 @@ function getDefaultSeason() {
   return month >= 6 ? year : year - 1;
 }
 
-function populateTransferSeasonOptions() {
-  const seasonYears = [];
-
-  for (let year = DEFAULT_SEASON; year >= 2020; year -= 1) {
-    seasonYears.push(year);
-  }
-
-  transferSeasonOptions.innerHTML = seasonYears
-    .map((year) => {
-      const label = formatSeasonLabel(year);
-      const full = `${year}/${year + 1}`;
-      return `<option value="${label}"></option><option value="${full}"></option>`;
-    })
-    .join("");
-}
-
 function formatSeasonLabel(startYear) {
   const start = String(startYear).slice(-2);
   const end = String(startYear + 1).slice(-2);
@@ -470,6 +453,32 @@ function getPeriodSortValue(period) {
   }
 
   return 0;
+}
+
+async function loadTransferSeasonOptions() {
+  try {
+    const response = await fetch(new URL("./data/transfers.json", window.location.href));
+    const payload = await response.json().catch(() => ({}));
+    const seasons = [...new Set((payload.results || []).map((item) => item.season).filter(Boolean))];
+
+    seasons.sort((a, b) => getSeasonSortValue(b) - getSeasonSortValue(a));
+
+    transferSeasonInput.innerHTML = [
+      `<option value="">Alle sesonger</option>`,
+      ...seasons.map((season) => `<option value="${season}">${toShortSeasonLabel(season)}</option>`)
+    ].join("");
+  } catch {
+    transferSeasonInput.innerHTML = `<option value="">Alle sesonger</option>`;
+  }
+}
+
+function toShortSeasonLabel(season) {
+  const match = (season || "").match(/^(\d{4})\/(\d{4})$/);
+  if (!match) {
+    return season;
+  }
+
+  return `${String(match[1]).slice(-2)}/${String(match[2]).slice(-2)}`;
 }
 
 function sortTransferResults(results) {
