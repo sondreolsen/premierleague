@@ -578,26 +578,7 @@ function getSuggestionScore(candidate, searchText) {
     return 5 + wordStartMatch;
   }
 
-  if (isSubsequenceMatch(candidate, searchText)) {
-    return 30;
-  }
-
   return null;
-}
-
-function isSubsequenceMatch(candidate, searchText) {
-  let candidateIndex = 0;
-  let searchIndex = 0;
-
-  while (candidateIndex < candidate.length && searchIndex < searchText.length) {
-    if (candidate[candidateIndex] === searchText[searchIndex]) {
-      searchIndex += 1;
-    }
-
-    candidateIndex += 1;
-  }
-
-  return searchIndex === searchText.length;
 }
 
 function filterTransfers(results, query, season) {
