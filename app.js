@@ -434,7 +434,7 @@ function updateTransferSuggestions() {
     searchText = normalizedQuery.slice(4).trim();
   }
 
-  const scopedResults = filterTransfers(transferDataset, "", season);
+  const scopedResults = getSuggestionSourceResults(transferDataset, season);
   const matches = [];
   const seen = new Set();
 
@@ -484,6 +484,18 @@ function updateTransferSuggestions() {
     .map((item) => item.value);
 
   renderTransferSuggestions(suggestions);
+}
+
+function getSuggestionSourceResults(results, season) {
+  const normalizedSeason = normalizeTransferSeason((season || "").trim());
+
+  return results.filter((item) => {
+    if (normalizedSeason && item.season !== normalizedSeason) {
+      return false;
+    }
+
+    return true;
+  });
 }
 
 function renderTransferSuggestions(suggestions) {
