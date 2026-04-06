@@ -44,7 +44,6 @@ jobs:
           Copy-Item app.js site/app.js
           Copy-Item styles.css site/styles.css
           Copy-Item hero-ball.svg site/hero-ball.svg
-          Copy-Item favicon.svg site/favicon.svg
 
       - name: Disable Jekyll
         shell: pwsh
